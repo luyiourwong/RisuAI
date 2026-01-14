@@ -119,6 +119,7 @@
             <OptionInput value="comfyui" >ComfyUI</OptionInput>
             <OptionInput value="Imagen" >Imagen</OptionInput>
             <OptionInput value="openai-compat" >OpenAI Compatible</OptionInput>
+            <OptionInput value="chutes" >Chutes</OptionInput>
 
             <!-- Legacy -->
             {#if DBState.db.sdProvider === 'comfy'}
@@ -665,6 +666,73 @@
                 <OptionInput value="medium" >Medium</OptionInput>
                 <OptionInput value="high" >High</OptionInput>
             </SelectInput>
+        {/if}
+
+        {#if DBState.db.sdProvider === 'chutes'}
+            <span class="text-textcolor mt-2">API URL</span>
+            <TextInput size="sm" marginBottom placeholder="https://chutes-z-image-turbo.chutes.ai/generates" bind:value={DBState.db.chutesImage.url}/>
+
+            <span class="text-textcolor">API Key</span>
+            <TextInput size="sm" marginBottom placeholder="sk-..." hideText={DBState.db.hideApiKey} bind:value={DBState.db.chutesImage.key}/>
+
+            <span class="text-textcolor">Image Reference</span>
+            <SelectInput className="mb-4" bind:value={DBState.db.chutesImage.reference_mode}>
+                <OptionInput value="" >None</OptionInput>
+                <OptionInput value="image" >Upload Image</OptionInput>
+                <OptionInput value="character" >Use Character Image</OptionInput>
+            </SelectInput>
+
+            {#if DBState.db.chutesImage.reference_mode === 'image'}
+                <div class="relative">
+                    <button class="mb-2" onclick={async () => {
+                        const img = await selectSingleFile([
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'webp'
+                        ])
+                        if(!img){
+                            return null
+                        }
+
+                        const imageData = img.data;
+
+                        DBState.db.chutesImage.reference_base64image = Buffer.from(imageData).toString('base64');
+                        const saveId = await saveAsset(imageData)
+                        DBState.db.chutesImage.reference_image = saveId
+                        console.log('Character image set:', DBState.db.chutesImage.reference_image)
+                    }}>
+                        {#if !DBState.db.chutesImage.reference_image || DBState.db.chutesImage.reference_image === ''}
+                            <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                <span class="text-sm">Upload<br />Image</span>
+                            </div>
+                        {:else}
+                            {#await getCharImage(DBState.db.chutesImage.reference_image, 'plain')}
+                                <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                                    <span class="text-sm">Uploading<br />Image..</span>
+                                </div>
+                            {:then im}
+                                <img src={im} class="rounded-md h-40 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500" alt="Base Preview"/>
+                            {/await}
+                        {/if}
+                    </button>
+
+                    {#if DBState.db.chutesImage.reference_image && DBState.db.chutesImage.reference_image !== ''}
+                        <button
+                          onclick={() => {
+                                DBState.db.chutesImage.reference_image = undefined;
+                                DBState.db.chutesImage.reference_base64image = undefined;
+                            }}
+                          class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded-sm"
+                        >
+                            Delete
+                        </button>
+                    {/if}
+                </div>
+            {/if}
+            {#if DBState.db.chutesImage.reference_mode === 'character'}
+                <span class="text-textcolor2 text-xs mb-2 block">Use the character's default image.</span>
+            {/if}
         {/if}
     </Accordion>
 {/if}

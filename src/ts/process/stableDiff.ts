@@ -782,5 +782,71 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
         }
         return returnSdData
     }
+
+    if(db.sdProvider === 'chutes'){
+        const config = db.chutesImage
+        const body: {[key:string]: any} = {
+            prompt: genPrompt
+        }
+        const headers: {[key:string]: string} = {
+            "Content-Type": "application/json"
+        }
+
+        // reference image
+        let base64img = ''
+        // reference: uploaded image
+        if (config.reference_mode === 'image') {
+            base64img = config.reference_base64image
+        }
+        // reference: auto use the character's default image
+        else if (config.reference_mode === 'character') {
+            const charimg = currentChar.image;
+            const img = await readImage(charimg)
+            if (img) {
+                base64img = Buffer.from(img).toString('base64')
+            }
+        }
+        if(base64img){
+            body.image = base64img
+        }
+
+        if(config.key){
+            headers["Authorization"] = "Bearer " + config.key
+        }
+
+        // Request
+        try {
+            const da = await globalFetch(config.url, {
+                body: body,
+                headers: headers,
+                rawResponse: true
+            })
+            if (da.ok) {
+                // binary image file, need to convert to base64
+                const binary = da.data
+                const res = Buffer.from(binary).toString('base64');
+                const img = `data:image/png;base64,${res}`
+
+                // inlay mode
+                if(returnSdData === 'inlay'){
+                    return img
+                }
+                // default mode
+                else {
+                    let charemotions = get(CharEmotion)
+                    const emos:[string, string,number][] = [[img, img, Date.now()]]
+                    charemotions[currentChar.chaId] = emos
+                    CharEmotion.set(charemotions)
+                    return returnSdData
+                }
+            } else {
+                alertError(JSON.stringify(da.data))
+                return false
+            }
+        } catch (error) {
+            alertError(error)
+            return false
+        }
+    }
     return ''
 }
