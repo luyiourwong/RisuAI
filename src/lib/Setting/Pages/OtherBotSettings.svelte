@@ -669,7 +669,7 @@
         {/if}
 
         {#if DBState.db.sdProvider === 'chutes'}
-            <span class="text-textcolor">Model</span>
+            <span class="text-textcolor">Endpoint</span>
             <SelectInput className="mb-4" bind:value={DBState.db.chutesImage.app}>
                 <OptionInput value="" >Default</OptionInput>
                 <OptionInput value="z-image-turbo" >Z Image Turbo</OptionInput>
