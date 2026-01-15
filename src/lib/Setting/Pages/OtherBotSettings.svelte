@@ -669,8 +669,25 @@
         {/if}
 
         {#if DBState.db.sdProvider === 'chutes'}
-            <span class="text-textcolor mt-2">API URL</span>
-            <TextInput size="sm" marginBottom placeholder="https://chutes-z-image-turbo.chutes.ai/generates" bind:value={DBState.db.chutesImage.url}/>
+            <span class="text-textcolor">Model</span>
+            <SelectInput className="mb-4" bind:value={DBState.db.chutesImage.app}>
+                <OptionInput value="" >Default</OptionInput>
+                <OptionInput value="z-image-turbo" >Z Image Turbo</OptionInput>
+                <OptionInput value="hidream" >Hidream</OptionInput>
+                <OptionInput value="qwen-edit-2509" >Qwen Image Edit 2509</OptionInput>
+                <OptionInput value="hunyuan-image-3" >Hunyuan Image 3</OptionInput>
+                <OptionInput value="custom" >Custom Url</OptionInput>
+            </SelectInput>
+
+            {#if DBState.db.chutesImage.app === ''}
+                <span class="text-textcolor mt-2">Model</span>
+                <TextInput size="sm" marginBottom placeholder="Qwen-Image-2512" bind:value={DBState.db.chutesImage.model}/>
+            {/if}
+            {#if DBState.db.chutesImage.app === 'custom'}
+                <span class="text-textcolor mt-2">API URL</span>
+                <TextInput size="sm" marginBottom placeholder="https://chutes-z-image-turbo.chutes.ai/generates" bind:value={DBState.db.chutesImage.url}/>
+                <span class="text-textcolor2 text-xs mb-2 block">Custom endpoint may not work in default request.</span>
+            {/if}
 
             <span class="text-textcolor">API Key</span>
             <TextInput size="sm" marginBottom placeholder="sk-..." hideText={DBState.db.hideApiKey} bind:value={DBState.db.chutesImage.key}/>

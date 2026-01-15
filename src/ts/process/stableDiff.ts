@@ -785,38 +785,85 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
 
     if(db.sdProvider === 'chutes'){
         const config = db.chutesImage
-        const body: {[key:string]: any} = {
-            prompt: genPrompt
-        }
+        const body: {[key:string]: any} = {}
         const headers: {[key:string]: string} = {
             "Content-Type": "application/json"
         }
 
-        // reference image
-        let base64img = ''
-        // reference: uploaded image
-        if (config.reference_mode === 'image') {
-            base64img = config.reference_base64image
+        // Prompt
+        if (config.app === 'z-image-turbo') {
+            // max 1200 for z-image-turbo
+            body.prompt = genPrompt.slice(0, 1200)
         }
-        // reference: auto use the character's default image
-        else if (config.reference_mode === 'character') {
-            const charimg = currentChar.image;
-            const img = await readImage(charimg)
-            if (img) {
-                base64img = Buffer.from(img).toString('base64')
+        else {
+            body.prompt = genPrompt
+        }
+
+        // Model for default endpoint
+        if (config.app === '') {
+            if (!config.model) {
+                alertError('Model is required for Default chutes endpoint.')
+                return false
             }
+            body.model = config.model;
         }
-        if(base64img){
-            body.image = base64img
+
+        // reference image
+        if (config.app === 'qwen-edit-2509'
+        || config.app === 'custom') {
+            let base64img = ''
+            // reference: uploaded image
+            if (config.reference_mode === 'image') {
+                base64img = config.reference_base64image
+            }
+            // reference: auto use the character's default image
+            else if (config.reference_mode === 'character') {
+                const charimg = currentChar.image;
+                const img = await readImage(charimg)
+                if (img) {
+                    base64img = Buffer.from(img).toString('base64')
+                }
+            }
+            if(base64img){
+                body.image_b64s = [base64img]
+            }
         }
 
         if(config.key){
             headers["Authorization"] = "Bearer " + config.key
         }
 
+        // Url
+        let requestEndpoint: string;
+        if (config.app === 'custom') {
+            if (!config.url) {
+                alertError('API URL is required for Custom URL chutes endpoint.')
+                return false
+            }
+            requestEndpoint = config.url
+        }
+        else {
+            switch (config.app) {
+                case 'z-image-turbo':
+                    requestEndpoint = 'https://chutes-z-image-turbo.chutes.ai/generate';
+                    break;
+                case 'hidream':
+                    requestEndpoint = 'https://chutes-hidream.chutes.ai/generate';
+                    break;
+                case 'qwen-edit-2509':
+                    requestEndpoint = 'https://chutes-qwen-image-edit-2509.chutes.ai/generate';
+                    break;
+                case 'hunyuan-image-3':
+                    requestEndpoint = 'https://chutes-hunyuan-image-3.chutes.ai/generate';
+                    break;
+                default:
+                    requestEndpoint = 'https://image.chutes.ai/generate';
+            }
+        }
+
         // Request
         try {
-            const da = await globalFetch(config.url, {
+            const da = await globalFetch(requestEndpoint, {
                 body: body,
                 headers: headers,
                 rawResponse: true

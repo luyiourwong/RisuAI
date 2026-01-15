@@ -638,6 +638,8 @@ export function setDatabase(data:Database){
         quality: 'auto'
     }
     data.chutesImage ??= {
+        app: '',
+        model: '',
         url: '',
         key: '',
         reference_mode: '',
@@ -1170,6 +1172,8 @@ export interface Database{
         quality: string
     }
     chutesImage: {
+        app: string
+        model: string
         url: string
         key: string
         reference_mode: string
