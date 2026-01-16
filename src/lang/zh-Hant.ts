@@ -879,6 +879,7 @@ export const languageChineseTraditional = {
     "joinMultiUserRoom": "加入使用者多人聊天室",
     "exactTokens": "精確 Tokens",
     "fixedTokens": "估算 Tokens",
+    "autoImgGen": "自動圖片生成",
     "inlayViewScreen": "內嵌視窗",
     "imgGenPrompt": "圖片生成提示詞",
     "imgGenNegatives": "圖片生成負面提示詞",

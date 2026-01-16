@@ -58,6 +58,7 @@ export function updateInlayScreen(char:character):character {
                     negative: '',
                     instructions: '',
                     emotionInstructions: `You must always output the character's emotional image as a command at the end of a conversation. The command must be selected from a given list, and it's better to have variety than to repeat images used in previous chats. Use one image, depending on the character's emotion. See the list below. Form: <Emotion="<image command>"> Example: <Emotion="Agree"> List of commands: {{slot}}`,
+                    autoImgGen: false,
                 }
                 return char
             }
@@ -65,7 +66,8 @@ export function updateInlayScreen(char:character):character {
                 prompt: '',
                 negative: '',
                 instructions: '',
-                emotionInstructions: `You must always output the character's emotional image as a command. The command must be selected from a given list, only output the command, depending on the character's emotion. List of commands: {{slot}}`
+                emotionInstructions: `You must always output the character's emotional image as a command. The command must be selected from a given list, only output the command, depending on the character's emotion. List of commands: {{slot}}`,
+                autoImgGen: false,
             }
             return char
         case 'imggen':
@@ -74,7 +76,8 @@ export function updateInlayScreen(char:character):character {
                     prompt: 'best quality, {{slot}}',
                     negative: 'worse quality',
                     instructions: 'You must always output the character\'s image as a keyword-formatted prompts that can be used in stable diffusion  at the end of a conversation. Use one image, depending on character, place, situation, etc. keyword should be long enough. Form: <ImgGen="<keyword-formatted prompt>">',
-                    emotionInstructions: ''
+                    emotionInstructions: '',
+                    autoImgGen: false,
                 }
                 return char
             }
@@ -82,7 +85,8 @@ export function updateInlayScreen(char:character):character {
                 prompt: 'best quality, {{slot}}',
                 negative: 'worse quality',
                 instructions: 'You must always output the character\'s image as a keyword-formatted prompts that can be used in stable diffusion. only output the that prompt, depending on character, place, situation, etc. keyword should be long enough.',
-                emotionInstructions: ''
+                emotionInstructions: '',
+                autoImgGen: false,
             }
             return char
         default:
@@ -90,7 +94,8 @@ export function updateInlayScreen(char:character):character {
                 prompt: '',
                 negative: '',
                 instructions: '',
-                emotionInstructions: ''
+                emotionInstructions: '',
+                autoImgGen: false,
             }
             return char
     }

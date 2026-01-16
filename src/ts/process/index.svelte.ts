@@ -9,7 +9,7 @@ import { parseChatML } from "../parser/chatML";
 import { loadLoreBookV3Prompt } from "./lorebook.svelte";
 import { findCharacterbyId, getAuthorNoteDefaultText, getPersonaPrompt, getUserName, isLastCharPunctuation, trimUntilPunctuation, parseToggleSyntax, prebuiltAssetCommand } from "../util";
 import { requestChatData } from "./request/request";
-import { stableDiff } from "./stableDiff";
+import { stableDiff, generateAIImage } from "./stableDiff";
 import { processScript, processScriptFull, risuChatParser } from "./scripts";
 import { exampleMessage } from "./exampleMessages";
 import { sayTTS } from "./tts";
@@ -19,7 +19,7 @@ import { groupOrder } from "./group";
 import { runTrigger } from "./triggers";
 import { HypaProcesser } from "./memory/hypamemory";
 import { additionalInformations } from "./embedding/addinfo";
-import { getInlayAsset } from "./files/inlays";
+import { getInlayAsset, writeInlayImage } from "./files/inlays";
 import { getGenerationModelString } from "./models/modelString";
 import { connectionOpen, peerRevertChat, peerSafeCheck, peerSync } from "../sync/multiuser";
 import { runInlayScreen } from "./inlayScreen";
@@ -1658,6 +1658,35 @@ export async function sendChat(chatProcessIndex = -1,arg:{
         },'emotion', abortSignal)
 
         DBState.db.characters[selectedChar].chats[selectedChat].message[DBState.db.characters[selectedChar].chats[selectedChat].message.length - 1].data += rq
+    }
+
+    if (currentChar.viewScreen === 'imggen' && currentChar.newGenData.autoImgGen && !arg.preview && !arg.previewPrompt && !abortSignal.aborted) {
+        const lastIdx = DBState.db.characters[selectedChar].chats[selectedChat].message.length - 1;
+        const lastMsg = DBState.db.characters[selectedChar].chats[selectedChat].message[lastIdx];
+
+        if (lastMsg && lastMsg.role === 'char') {
+            // Remove <Thoughts> tags before processing
+            let processedResult = result
+            processedResult = processedResult.replace(/<Thoughts>(.+)<\/Thoughts>/gms, '')
+
+            const neg = currentChar.newGenData.negative;
+            const prompt = currentChar.newGenData.prompt.replaceAll('{{slot}}', processedResult);
+
+            try {
+                const v = await generateAIImage(prompt, currentChar, neg, 'inlay');
+                if (v) {
+                    const imgHTML = new Image();
+                    imgHTML.src = v;
+                    const inlay = await writeInlayImage(imgHTML);
+                    // Append image label to the end of the response
+                    DBState.db.characters[selectedChar].chats[selectedChat].message[lastIdx].data += ` {{inlay::${inlay}}}`;
+                    DBState.db.characters[selectedChar].reloadKeys += 1;
+                }
+            }
+            catch (e) {
+                console.error("Auto ImgGen Failed:", e);
+            }
+        }
     }
 
     stageTimings.stage3Duration = Date.now() - stageTimings.stage3Start

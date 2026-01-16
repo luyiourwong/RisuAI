@@ -1944,6 +1944,7 @@ type CharacterCardV2Risu = {
                     negative: string,
                     instructions: string,
                     emotionInstructions: string,
+                    autoImgGen?:boolean,
                 },
                 vits?: {[key:string]:string}
             }

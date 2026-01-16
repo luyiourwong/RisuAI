@@ -554,6 +554,7 @@
             <span class="text-textcolor mt-2">{language.imgGenInstructions}</span>
             <TextAreaInput highlight bind:value={(DBState.db.characters[$selectedCharID] as character).newGenData.instructions} />
 
+            <CheckInput bind:check={(DBState.db.characters[$selectedCharID] as character).newGenData.autoImgGen} name={language.autoImgGen}/>
             <CheckInput bind:check={(DBState.db.characters[$selectedCharID] as character).inlayViewScreen} name={language.inlayViewScreen} onChange={() => {
                 if((DBState.db.characters[$selectedCharID] as character).type === 'character'){
                     (DBState.db.characters[$selectedCharID] as character) = updateInlayScreen((DBState.db.characters[$selectedCharID] as character))

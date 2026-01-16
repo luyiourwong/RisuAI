@@ -1249,6 +1249,7 @@ export interface character{
         negative: string,
         instructions: string,
         emotionInstructions: string,
+        autoImgGen?: boolean,
     }
     customscript: customscript[]
     triggerscript: triggerscript[]
