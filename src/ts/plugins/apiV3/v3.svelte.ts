@@ -6,6 +6,8 @@ import DOMPurify from 'dompurify';
 import { additionalChatMenu, additionalFloatingActionButtons, additionalHamburgerMenu, additionalSettingsMenu, DBState, selectedCharID, type MenuDef } from "src/ts/stores.svelte";
 import { v4 } from "uuid";
 import { sleep } from "src/ts/util";
+import { generateAIImage } from "src/ts/process/stableDiff";
+import { writeInlayImage } from "src/ts/process/files/inlays";
 import { alertConfirm, alertError, alertNormal } from "src/ts/alert";
 import { language } from "src/lang";
 import { checkCharOrder, forageStorage, getFetchLogs } from "src/ts/globalApi.svelte";
@@ -827,6 +829,54 @@ const makeRisuaiAPIV3 = (iframe:HTMLIFrameElement,plugin:RisuPlugin) => {
         checkCharOrder: checkCharOrder,
         requestPluginPermission: (permission:string) => {
             return getPluginPermission(plugin.name, permission as any);
+        },
+        generateImage: async (prompt: string, negative: string) => {
+            // Permission check
+            const conf = await getPluginPermission(plugin.name, 'db');
+            if(!conf){
+                return null;
+            }
+
+            // Get current character
+            const db = getDatabase();
+            const charId = get(selectedCharID);
+            const nowChatroom = db.characters[charId];
+            if (!nowChatroom) return null;
+            if (nowChatroom.type === 'group') return null; // Unsupport for group chats
+
+            // Generate image
+            try {
+                const result = await generateAIImage(prompt, $state.snapshot(nowChatroom), negative, 'inlay');
+                return result || null;
+            } catch (e) {
+                console.error("Plugin generateImage error:", e);
+                return null;
+            }
+        },
+        createInlay: async (base64Image: string) => {
+            // Permission check
+            const conf = await getPluginPermission(plugin.name, 'db');
+            if(!conf){
+                return null;
+            }
+
+            // Create inlay image id
+            try {
+                const img = new Image();
+                img.src = base64Image;
+
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+
+                const id = await writeInlayImage(img);
+                // need to wrap by {{inlay:id}} manually, leave as is for more flexibility
+                return id;
+            } catch (e) {
+                console.error("Plugin createInlay error:", e);
+                return null;
+            }
         },
         //Internal use APIs
         _getOldKeys: () => {

@@ -1449,6 +1449,21 @@ interface RisuaiPluginAPI {
     requestPluginPermission(permission: string): Promise<boolean>;
 
     /**
+     * Generates an image using the configured Stable Diffusion provider.
+     * @param prompt Positive prompt
+     * @param negative Negative prompt
+     * @returns Promise resolving to Base64 image data (Data URI) or null if failed
+     */
+    generateImage(prompt: string, negative: string): Promise<string | null>;
+
+    /**
+     * Creates an inlay image asset from a base64 string.
+     * @param base64Image Base64 image data
+     * @returns Promise resolving to the Inlay ID or null if failed
+     */
+    createInlay(base64Image: string): Promise<string | null>;
+
+    /**
      * Unwraps a SafeClassArray into a standard array
      * @param safeArray - The SafeClassArray to unwrap
      * @returns Standard array of items
