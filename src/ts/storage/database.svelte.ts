@@ -461,6 +461,7 @@ export function setDatabase(data:Database){
         only: [],
         ignore: []
     }
+    data.openRouterReasoning ??= {}
     data.useInstructPrompt ??= false
     data.hanuraiEnable ??= false
     data.hanuraiSplit ??= false
@@ -925,6 +926,17 @@ export interface Database{
         order: string[]
         only: string[]
         ignore: string[]
+    }
+    /** https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#controlling-reasoning-tokens */
+    openRouterReasoning: {
+        /** OpenAI-style: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" */
+        effort?: "xhigh" | "high" | "medium" | "low" | "minimal" | "none"
+        /** Anthropic-style: Specific token limit */
+        max_tokens?: number
+        /** Set to true to exclude reasoning tokens from response */
+        exclude?: boolean
+        /** Explicitly enable reasoning; default is inferred from effort/max_tokens */
+        enabled?: boolean
     }
     useInstructPrompt:boolean
     hanuraiTokens:number
@@ -1437,6 +1449,12 @@ export interface botPreset{
         order: string[]
         only: string[]
         ignore: string[]
+    }
+    openRouterReasoning?: {
+        effort?: "xhigh" | "high" | "medium" | "low" | "minimal" | "none"
+        max_tokens?: number
+        exclude?: boolean
+        enabled?: boolean
     }
     useInstructPrompt?:boolean
     customPromptTemplateToggle?:string

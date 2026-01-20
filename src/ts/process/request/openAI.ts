@@ -13,6 +13,7 @@ import { supportsInlayImage } from "../files/inlays"
 import { simplifySchema } from "src/ts/util"
 import { callTool, decodeToolCall, encodeToolCall } from "../mcp/mcp"
 import { alertError } from "src/ts/alert";
+import pickBy from "lodash/pickBy";
 
 
 interface OAIResponseInputItem {
@@ -435,6 +436,16 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
             }
             if (Object.keys(provider).length) {
                 body.provider = provider;
+            }
+        }
+
+        // https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+        if(db.openRouterReasoning){
+            // pickBy non-undefined items to respect API defaults
+            const config = pickBy(db.openRouterReasoning, (v) => v !== undefined);
+            // add to body if config is not empty
+            if (Object.keys(config).length > 0) {
+                body.reasoning = config;
             }
         }
 

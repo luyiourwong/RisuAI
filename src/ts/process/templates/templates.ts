@@ -407,6 +407,7 @@ export const prebuiltPresets = {
         "only": [],
         "ignore": []
     },
+    "openRouterReasoning": {},
     "useInstructPrompt": false,
     "customPromptTemplateToggle": "",
     "templateDefaultVariables": ""
