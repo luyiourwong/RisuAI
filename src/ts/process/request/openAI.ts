@@ -441,12 +441,6 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         // https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
         if(db.openRouterReasoning){
             const config: typeof db.openRouterReasoning = {} as typeof db.openRouterReasoning;
-            if (db.openRouterReasoning.enabled) {
-                config.enabled = db.openRouterReasoning.enabled;
-            }
-            if (db.openRouterReasoning.exclude) {
-                config.exclude = db.openRouterReasoning.exclude;
-            }
             if (db.openRouterReasoning.effort?.trim()) {
                 config.effort = db.openRouterReasoning.effort;
             }

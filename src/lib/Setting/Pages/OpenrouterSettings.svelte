@@ -10,6 +10,7 @@
     import SelectInput from "src/lib/UI/GUI/SelectInput.svelte";
     import OptionInput from "src/lib/UI/GUI/OptionInput.svelte";
     import NumberInput from "src/lib/UI/GUI/NumberInput.svelte";
+    import Help from "src/lib/Others/Help.svelte";
 
     const openrouterProviders = [
         // An alphabetically separate set of very-dead providers is kept at the top of the list in the docs.
@@ -82,28 +83,23 @@
 </script>
 
 <Accordion name="Openrouter Settings" styled>
-    <div class="flex items-center mb-4">
-        <Check bind:check={DBState.db.openRouterReasoning.enabled} name={language.openRouterReasoning.enabled}/>
-    </div>
-    <div class="flex items-center mb-4">
-        <Check bind:check={DBState.db.openRouterReasoning.exclude} name={language.openRouterReasoning.exclude}/>
-    </div>
+    <Accordion name={language.openRouterReasoning.title} styled>
+        <span class="text-textcolor2 text-xs mb-2 block">{language.openRouterReasoning.note}</span>
 
-    <span class="text-textcolor mb-2">{language.openRouterReasoning.effortTitle}</span>
-    <SelectInput className="mb-2" bind:value={DBState.db.openRouterReasoning.effort}>
-        <OptionInput value="">{language.openRouterReasoning.effortAuto}</OptionInput>
-        <OptionInput value="none">{language.openRouterReasoning.effortNone}</OptionInput>
-        <OptionInput value="minimal">{language.openRouterReasoning.effortMinimal}</OptionInput>
-        <OptionInput value="low">{language.openRouterReasoning.effortLow}</OptionInput>
-        <OptionInput value="medium">{language.openRouterReasoning.effortMedium}</OptionInput>
-        <OptionInput value="high">{language.openRouterReasoning.effortHigh}</OptionInput>
-        <OptionInput value="xhigh">{language.openRouterReasoning.effortXhigh}</OptionInput>
-    </SelectInput>
-    <span class="text-textcolor2 text-xs mb-2 block">{language.openRouterReasoning.effortDescription}</span>
+        <span class="text-textcolor mb-2">{language.openRouterReasoning.effortTitle} <Help key="openRouterReasoningEffort"/></span>
+        <SelectInput className="mb-2" bind:value={DBState.db.openRouterReasoning.effort}>
+            <OptionInput value="">{language.openRouterReasoning.effortAuto}</OptionInput>
+            <OptionInput value="none">{language.openRouterReasoning.effortNone}</OptionInput>
+            <OptionInput value="minimal">{language.openRouterReasoning.effortMinimal}</OptionInput>
+            <OptionInput value="low">{language.openRouterReasoning.effortLow}</OptionInput>
+            <OptionInput value="medium">{language.openRouterReasoning.effortMedium}</OptionInput>
+            <OptionInput value="high">{language.openRouterReasoning.effortHigh}</OptionInput>
+            <OptionInput value="xhigh">{language.openRouterReasoning.effortXhigh}</OptionInput>
+        </SelectInput>
 
-    <span class="text-textcolor mb-2">{language.openRouterReasoning.maxTitle}</span>
-    <NumberInput size="sm" marginBottom bind:value={DBState.db.openRouterReasoning.max_tokens}/>
-    <span class="text-textcolor2 text-xs mb-2 block">{language.openRouterReasoning.maxDescription}</span>
+        <span class="text-textcolor mb-2">{language.openRouterReasoning.maxTokensTitle} <Help key="openRouterReasoningMaxTokens"/></span>
+        <NumberInput size="sm" marginBottom bind:value={DBState.db.openRouterReasoning.max_tokens}/>
+    </Accordion>
 
     <div class="flex items-center mb-4">
         <Check bind:check={DBState.db.openrouterFallback} name={language.openrouterFallback}/>

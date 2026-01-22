@@ -462,8 +462,6 @@ export function setDatabase(data:Database){
         ignore: []
     }
     data.openRouterReasoning ??= {
-        enabled: true,
-        exclude: false,
         effort: "",
         max_tokens: null,
     }
@@ -935,13 +933,9 @@ export interface Database{
     /** https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#controlling-reasoning-tokens */
     openRouterReasoning: {
         /** OpenAI-style: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" */
-        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | ""
+        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | string
         /** Anthropic-style: Specific token limit */
         max_tokens: number | null
-        /** Set to true to exclude reasoning tokens from response */
-        exclude: boolean
-        /** Explicitly enable reasoning; default is inferred from effort/max_tokens */
-        enabled: boolean
     }
     useInstructPrompt:boolean
     hanuraiTokens:number
@@ -1458,13 +1452,9 @@ export interface botPreset{
     /** https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#controlling-reasoning-tokens */
     openRouterReasoning?: {
         /** OpenAI-style: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" */
-        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | ""
+        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | string
         /** Anthropic-style: Specific token limit */
         max_tokens: number | null
-        /** Set to true to exclude reasoning tokens from response */
-        exclude: boolean
-        /** Explicitly enable reasoning; default is inferred from effort/max_tokens */
-        enabled: boolean
     }
     useInstructPrompt?:boolean
     customPromptTemplateToggle?:string

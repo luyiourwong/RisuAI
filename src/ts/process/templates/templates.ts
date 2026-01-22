@@ -408,8 +408,6 @@ export const prebuiltPresets = {
         "ignore": []
     },
     "openRouterReasoning": {
-      "enabled": true,
-      "exclude": false,
       "effort": "",
       "max_tokens": null,
     },
