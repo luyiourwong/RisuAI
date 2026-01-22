@@ -461,7 +461,12 @@ export function setDatabase(data:Database){
         only: [],
         ignore: []
     }
-    data.openRouterReasoning ??= {}
+    data.openRouterReasoning ??= {
+        enabled: true,
+        exclude: false,
+        effort: "",
+        max_tokens: null,
+    }
     data.useInstructPrompt ??= false
     data.hanuraiEnable ??= false
     data.hanuraiSplit ??= false
@@ -930,13 +935,13 @@ export interface Database{
     /** https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#controlling-reasoning-tokens */
     openRouterReasoning: {
         /** OpenAI-style: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" */
-        effort?: "xhigh" | "high" | "medium" | "low" | "minimal" | "none"
+        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | ""
         /** Anthropic-style: Specific token limit */
-        max_tokens?: number
+        max_tokens: number | null
         /** Set to true to exclude reasoning tokens from response */
-        exclude?: boolean
+        exclude: boolean
         /** Explicitly enable reasoning; default is inferred from effort/max_tokens */
-        enabled?: boolean
+        enabled: boolean
     }
     useInstructPrompt:boolean
     hanuraiTokens:number
@@ -1450,11 +1455,16 @@ export interface botPreset{
         only: string[]
         ignore: string[]
     }
+    /** https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#controlling-reasoning-tokens */
     openRouterReasoning?: {
-        effort?: "xhigh" | "high" | "medium" | "low" | "minimal" | "none"
-        max_tokens?: number
-        exclude?: boolean
-        enabled?: boolean
+        /** OpenAI-style: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" */
+        effort: "xhigh" | "high" | "medium" | "low" | "minimal" | "none" | ""
+        /** Anthropic-style: Specific token limit */
+        max_tokens: number | null
+        /** Set to true to exclude reasoning tokens from response */
+        exclude: boolean
+        /** Explicitly enable reasoning; default is inferred from effort/max_tokens */
+        enabled: boolean
     }
     useInstructPrompt?:boolean
     customPromptTemplateToggle?:string

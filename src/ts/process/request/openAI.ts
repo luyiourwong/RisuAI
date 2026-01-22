@@ -13,7 +13,6 @@ import { supportsInlayImage } from "../files/inlays"
 import { simplifySchema } from "src/ts/util"
 import { callTool, decodeToolCall, encodeToolCall } from "../mcp/mcp"
 import { alertError } from "src/ts/alert";
-import pickBy from "lodash/pickBy";
 
 
 interface OAIResponseInputItem {
@@ -441,8 +440,20 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
 
         // https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
         if(db.openRouterReasoning){
-            // pickBy non-undefined items to respect API defaults
-            const config = pickBy(db.openRouterReasoning, (v) => v !== undefined);
+            const config: typeof db.openRouterReasoning = {} as typeof db.openRouterReasoning;
+            if (db.openRouterReasoning.enabled) {
+                config.enabled = db.openRouterReasoning.enabled;
+            }
+            if (db.openRouterReasoning.exclude) {
+                config.exclude = db.openRouterReasoning.exclude;
+            }
+            if (db.openRouterReasoning.effort?.trim()) {
+                config.effort = db.openRouterReasoning.effort;
+            }
+            if (db.openRouterReasoning.max_tokens !== null) {
+                config.max_tokens = db.openRouterReasoning.max_tokens;
+            }
+
             // add to body if config is not empty
             if (Object.keys(config).length > 0) {
                 body.reasoning = config;

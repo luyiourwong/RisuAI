@@ -407,7 +407,12 @@ export const prebuiltPresets = {
         "only": [],
         "ignore": []
     },
-    "openRouterReasoning": {},
+    "openRouterReasoning": {
+      "enabled": true,
+      "exclude": false,
+      "effort": "",
+      "max_tokens": null,
+    },
     "useInstructPrompt": false,
     "customPromptTemplateToggle": "",
     "templateDefaultVariables": ""
