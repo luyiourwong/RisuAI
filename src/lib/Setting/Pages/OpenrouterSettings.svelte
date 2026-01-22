@@ -83,7 +83,7 @@
 </script>
 
 <Accordion name="Openrouter Settings" styled>
-    <Accordion name={language.openRouterReasoning.title} styled>
+    <Accordion className="mb-2" name={language.openRouterReasoning.title} styled>
         <span class="text-textcolor2 text-xs mb-2 block">{language.openRouterReasoning.note}</span>
 
         <span class="text-textcolor mb-2">{language.openRouterReasoning.effortTitle} <Help key="openRouterReasoningEffort"/></span>
