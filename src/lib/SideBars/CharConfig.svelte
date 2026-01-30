@@ -165,6 +165,21 @@
     });
 
     $effect.pre(() => {
+        if (DBState.db.characters[$selectedCharID].ttsMode === 'wavespeed' && (DBState.db.characters[$selectedCharID] as character).wavespeedTtsConfig === undefined) {
+            (DBState.db.characters[$selectedCharID] as character).wavespeedTtsConfig = {
+                model: '',
+                language: '',
+                voice: '',
+                style_instruction: '',
+                reference_audio_base64: '',
+                reference_audio_id: '',
+                reference_text: '',
+                voice_description: ''
+            };
+        }
+    });
+
+    $effect.pre(() => {
         if(DBState.db.characters[$selectedCharID].type === 'group' && ($CharConfigSubMenu === 4 || $CharConfigSubMenu === 5)){
             $CharConfigSubMenu = 0
         }
@@ -763,6 +778,7 @@
             <OptionInput value="vits">VITS</OptionInput>
             <OptionInput value="gptsovits">GPT-SoVITS</OptionInput>
             <OptionInput value="fishspeech">fish-speech</OptionInput>
+            <OptionInput value="wavespeed">Wavespeed</OptionInput>
         </SelectInput>
         
 
@@ -999,6 +1015,80 @@
 
             <span class="mt-2 text-textcolor">Normalize</span>
             <Check className="mb-4 mt-2" bind:check={DBState.db.characters[$selectedCharID].fishSpeechConfig.normalize}/>
+        {:else if DBState.db.characters[$selectedCharID].ttsMode === 'wavespeed'}
+            <span class="text-textcolor">Model</span>
+            <SelectInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.model}>
+                <OptionInput value="">Not selected</OptionInput>
+                <OptionInput value="wavespeed-ai/qwen3-tts/text-to-speech">Qwen3 Default</OptionInput>
+                <OptionInput value="wavespeed-ai/qwen3-tts/voice-clone">Qwen3 Voice Clone</OptionInput>
+                <OptionInput value="wavespeed-ai/qwen3-tts/voice-design">Qwen3 Voice Design</OptionInput>
+            </SelectInput>
+
+            {#if DBState.db.characters[$selectedCharID].wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/text-to-speech'}
+                <span class="text-textcolor">Voice</span>
+                <SelectInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.voice}>
+                    <OptionInput value="">Vivian</OptionInput>
+                    <OptionInput value="Serena">Serena</OptionInput>
+                    <OptionInput value="Ono_Anna">Ono_Anna</OptionInput>
+                    <OptionInput value="Sohee">Sohee</OptionInput>
+                    <OptionInput value="Uncle_Fu">Uncle_Fu</OptionInput>
+                    <OptionInput value="Dylan">Dylan</OptionInput>
+                    <OptionInput value="Eric">Eric</OptionInput>
+                    <OptionInput value="Ryan">Ryan</OptionInput>
+                    <OptionInput value="Aiden">Aiden</OptionInput>
+                </SelectInput>
+
+                <span class="text-textcolor">Style Instruction</span>
+                <TextAreaInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.style_instruction}/>
+            {:else if DBState.db.characters[$selectedCharID].wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/voice-clone'}
+                <span class="text-textcolor">Reference Audio</span>
+                <button class="mb-2" onclick={async () => {
+                            const audio = await selectSingleFile([
+                                'mp3',
+                                'wav',
+                            ])
+                            if(!audio){
+                                return null
+                            }
+
+                            const audioData = audio.data;
+
+                            DBState.db.characters[$selectedCharID].wavespeedTtsConfig.reference_audio_base64 = Buffer.from(audioData).toString('base64');
+                            DBState.db.characters[$selectedCharID].wavespeedTtsConfig.reference_audio_id = await saveAsset(audioData)
+                        }}>
+                    {#if !DBState.db.characters[$selectedCharID].wavespeedTtsConfig.reference_audio_id || DBState.db.characters[$selectedCharID].wavespeedTtsConfig.reference_audio_id === ''}
+                        <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                            <span class="text-sm">Upload<br />Audio</span>
+                        </div>
+                    {:else}
+                        <div class="rounded-md h-20 w-20 shadow-lg bg-textcolor2 cursor-pointer hover:text-green-500 flex items-center justify-center">
+                            <span class="text-sm">Upload<br />Audio</span>
+                        </div>
+                        <!--TODO add an audio player to preview uploaded audio-->
+                    {/if}
+                </button>
+
+                <span class="text-textcolor">Reference Text</span>
+                <TextAreaInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.reference_text}/>
+            {:else if DBState.db.characters[$selectedCharID].wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/voice-design'}
+                <span class="text-textcolor">Voice Description</span>
+                <TextAreaInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.voice_description}/>
+            {/if}
+
+            <span class="text-textcolor">Language</span>
+            <SelectInput className="mb-4 mt-2" bind:value={DBState.db.characters[$selectedCharID].wavespeedTtsConfig.language}>
+                <OptionInput value="">Auto</OptionInput>
+                <OptionInput value="Chinese">Chinese</OptionInput>
+                <OptionInput value="English">English</OptionInput>
+                <OptionInput value="German">German</OptionInput>
+                <OptionInput value="Italian">Italian</OptionInput>
+                <OptionInput value="Portuguese">Portuguese</OptionInput>
+                <OptionInput value="Spanish">Spanish</OptionInput>
+                <OptionInput value="Japanese">Japanese</OptionInput>
+                <OptionInput value="Korean">Korean</OptionInput>
+                <OptionInput value="French">French</OptionInput>
+                <OptionInput value="Russian">Russian</OptionInput>
+            </SelectInput>
         {/if}
         {#if DBState.db.characters[$selectedCharID].ttsMode}
             <div class="flex items-center mt-2">

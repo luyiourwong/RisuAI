@@ -390,6 +390,7 @@ export function setDatabase(data:Database){
     data.gptVisionQuality ??= 'low'
     data.huggingfaceKey ??= ''
     data.fishSpeechKey ??= ''
+    data.wavespeedTtsKey ??= ''
     data.presetRegex ??= []
     data.reverseProxyOobaArgs ??= {
         mode: 'instruct'
@@ -882,6 +883,7 @@ export interface Database{
     reverseProxyOobaArgs: OobaChatCompletionRequestParams
     huggingfaceKey:string
     fishSpeechKey:string
+    wavespeedTtsKey:string
     allowAllExtentionFiles?:boolean
     translatorPrompt:string
     translatorMaxResponse:number
@@ -1261,6 +1263,16 @@ export interface character{
         normalize:boolean,
 
     }
+    wavespeedTtsConfig?:{
+        model?: string
+        language?: string
+        voice?: string
+        style_instruction?: string
+        reference_audio_base64?: string
+        reference_audio_id?: string
+        reference_text?: string
+        voice_description?: string
+    }
     supaMemory?:boolean
     additionalAssets?:[string, string, string][]
     ttsReadOnlyQuoted?:boolean
@@ -1369,6 +1381,7 @@ export interface groupChat{
     vits?: OnnxModelFiles
     gptSoVitsConfig?:any
     fishSpeechConfig?:any
+    wavespeedTtsConfig?:any
     ttsReadOnlyQuoted?:boolean
     exampleMessage?:string
     systemPrompt?:string

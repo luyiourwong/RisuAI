@@ -354,6 +354,158 @@ export async function sayTTS(character:character,text:string) {
                     const text = Buffer.from(textBuffer).toString('utf-8')
                     throw new Error(text);
                 }
+                break
+            }
+            case 'wavespeed':{
+                if (character.wavespeedTtsConfig.model === ''){
+                    throw new Error('Wavespeed TTS Model is not selected')
+                }
+
+                type BaseBody = {
+                    language: string;
+                    text: string;
+                };
+                type TextToSpeechBody = BaseBody & {
+                    voice: string;
+                    style_instruction?: string;
+                };
+                type VoiceCloneBody = BaseBody & {
+                    audio: string;
+                };
+                type VoiceDesignBody = BaseBody & {
+                    voice_description: string;
+                };
+                type WavespeedBody = TextToSpeechBody | VoiceCloneBody | VoiceDesignBody;
+
+                let body: WavespeedBody;
+                if (character.wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/text-to-speech') {
+                    body = {
+                        language: character.wavespeedTtsConfig.language,
+                        text,
+                        voice: character.wavespeedTtsConfig.voice,
+                        style_instruction: character.wavespeedTtsConfig.style_instruction,
+                    };
+                } else if (character.wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/voice-clone') {
+                    const audio: Uint8Array = await loadAsset(character.wavespeedTtsConfig.reference_audio_id);
+                    const base64Audio = btoa(new Uint8Array(audio).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+                    body = {
+                        language: character.wavespeedTtsConfig.language,
+                        text,
+                        audio: base64Audio,
+                    };
+                } else if (character.wavespeedTtsConfig.model === 'wavespeed-ai/qwen3-tts/voice-design') {
+                    body = {
+                        language: character.wavespeedTtsConfig.language,
+                        text,
+                        voice_description: character.wavespeedTtsConfig.voice_description,
+                    };
+                } else {
+                    throw new Error(`Unsupported Wavespeed TTS model: ${character.wavespeedTtsConfig.model}`);
+                }
+
+                // Request
+                // First: submit task
+                const requestEndpoint = `https://api.wavespeed.ai/api/v3/${character.wavespeedTtsConfig.model}`
+                const requestResponse = await globalFetch(requestEndpoint, {
+                    body: body,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + db.wavespeedTtsKey
+                    }
+                })
+                let requestId: string;
+                if (requestResponse.ok) {
+                    /*
+                    * submit response:
+                    * {
+                    *   code: number = HTTP status code (e.g., 200 for success)
+                    *   message: string = Status message (e.g., “success”)
+                    *   data: {
+                    *     id: string = Unique identifier for the prediction, Task Id
+                    *   }
+                    * }
+                    * */
+                    requestId = requestResponse.data.data.id
+                }
+                else {
+                    throw new Error(`Submit task failed ${requestResponse.status}: ${requestResponse.data}`)
+                }
+
+                // Second: monitor task
+                const taskEndpoint = `https://api.wavespeed.ai/api/v3/predictions/${requestId}/result`
+                let resultEndpoint: string;
+                const POLL_INTERVAL = 1000; // monitor every 1 seconds
+                const MAX_WAIT_TIME = 3 * 60 * 1000; // 3 minutes absolute timeout
+                const startTime = Date.now();
+                while (true) {
+                    const elapsedTime = Date.now() - startTime;
+                    if (elapsedTime > MAX_WAIT_TIME) {
+                        throw new Error(`Task timeout after ${MAX_WAIT_TIME / 1000}s`);
+                    }
+                    const taskResponse = await globalFetch(taskEndpoint, {
+                        method: 'GET',
+                        headers: {
+                            "Authorization": "Bearer " + db.wavespeedTtsKey
+                        }
+                    })
+                    if (taskResponse.ok) {
+                        /*
+                        * monitor response:
+                        * {
+                        *   code: number = HTTP status code (e.g., 200 for success)
+                        *   message: string = Status message (e.g., “success”)
+                        *   data: {
+                        *     status: string = Status of the task: created, processing, completed, or failed
+                        *     outputs: string[] = Array of URLs to the generated content (empty when status is not completed)
+                        *   }
+                        * }
+                        * */
+                        if (taskResponse.data.data.status === 'completed') {
+                            resultEndpoint = taskResponse.data.data.outputs[0]
+                            break
+                        }
+                        else if (taskResponse.data.data.status === 'failed') {
+                            throw new Error(JSON.stringify(taskResponse.data))
+                        }
+                        // else keep loop
+                        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+                    }
+                    else {
+                        throw new Error(JSON.stringify(taskResponse.data))
+                    }
+                }
+                if (!resultEndpoint) {
+                    throw new Error('Task finished but no result URL')
+                }
+
+                // Third: get result
+                const resultResponse = await globalFetch(resultEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        "Authorization": "Bearer " + db.wavespeedTtsKey
+                    },
+                    rawResponse: true
+                })
+                if (resultResponse.ok) {
+                    // Convert uint8array to arraybuffer
+                    const bytes = resultResponse.data as Uint8Array;
+                    const audioArrayBuffer: ArrayBuffer =
+                        bytes.buffer instanceof ArrayBuffer
+                            ? bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+                            : bytes.slice().buffer;
+
+                    const audioContext = new AudioContext();
+                    audioContext.decodeAudioData(audioArrayBuffer, (decodedData) => {
+                        sourceNode = audioContext.createBufferSource();
+                        sourceNode.buffer = decodedData;
+                        sourceNode.connect(audioContext.destination);
+                        sourceNode.start();
+                    }).then();
+                }
+                else {
+                    throw new Error(JSON.stringify(resultResponse.data))
+                }
+                break;
             }
         }   
     } catch (error) {

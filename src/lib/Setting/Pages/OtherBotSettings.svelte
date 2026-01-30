@@ -692,6 +692,9 @@
     <span class="text-textcolor">fish-speech API Key</span>
     <TextInput size="sm" marginBottom bind:value={DBState.db.fishSpeechKey}/>
 
+    <span class="text-textcolor">Wavespeed API Key</span>
+    <TextInput size="sm" marginBottom bind:value={DBState.db.wavespeedTtsKey}/>
+
 </Accordion>
 {/if}
 
