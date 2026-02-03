@@ -119,6 +119,7 @@
             <OptionInput value="comfyui" >ComfyUI</OptionInput>
             <OptionInput value="Imagen" >Imagen</OptionInput>
             <OptionInput value="openai-compat" >OpenAI Compatible</OptionInput>
+            <OptionInput value="operouter" >OpenRouter</OptionInput>
 
             <!-- Legacy -->
             {#if DBState.db.sdProvider === 'comfy'}
@@ -665,6 +666,14 @@
                 <OptionInput value="medium" >Medium</OptionInput>
                 <OptionInput value="high" >High</OptionInput>
             </SelectInput>
+        {/if}
+
+        {#if DBState.db.sdProvider === 'openrouter'}
+            <span class="text-textcolor">API Key</span>
+            <TextInput size="sm" marginBottom placeholder="sk-..." hideText={DBState.db.hideApiKey} bind:value={DBState.db.openRouterImage.key}/>
+
+            <span class="text-textcolor">Model</span>
+            <TextInput size="sm" marginBottom placeholder="openai/gpt-5-image" bind:value={DBState.db.openRouterImage.model}/>
         {/if}
     </Accordion>
 {/if}

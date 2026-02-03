@@ -612,6 +612,10 @@ export function setDatabase(data:Database){
         size: '1024x1024',
         quality: 'auto'
     }
+    data.openRouterImage ??= {
+        key: '',
+        model: ''
+    }
     data.autoScrollToNewMessage ??= true
     data.alwaysScrollToNewMessage ??= false
     data.newMessageButtonStyle ??= 'bottom-center'
@@ -1105,6 +1109,10 @@ export interface Database{
         model: string
         size: string
         quality: string
+    }
+    openRouterImage: {
+        key: string
+        model: string
     }
     sourcemapTranslate:boolean
     settingsCloseButtonSize:number

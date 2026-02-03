@@ -782,5 +782,108 @@ export async function generateAIImage(genPrompt:string, currentChar:character, n
         }
         return returnSdData
     }
+    if(db.sdProvider === 'openrouter'){
+        const config = db.openRouterImage
+        if (!config.key) {
+            alertError('Please enter OpenRouter API key')
+            return false
+        }
+
+        // https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request#request
+        let imageUrl: string;
+        const res = await globalFetch('https://openrouter.ai/api/v1/chat/completions', {
+            body: {
+                model: config.model,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: genPrompt
+                            }
+                        ]
+                    }
+                ],
+                modalities: ['image', 'text']
+            },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + config.key,
+                "HTTP-Referer": "https://risuai.xyz",
+                "X-Title": "RisuAI", // Same headers in src/ts/process/request/openAI.ts
+            }
+        })
+        if (res.ok) {
+            // https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request#response
+            type ImageResponse = {
+                image_url: {
+                    url: string
+                }
+            };
+            type ChatCompletionResponse = {
+                choices: Array<{
+                    message: {
+                        images?: Array<ImageResponse>
+                    }
+                }>
+            };
+            const dat = res.data as ChatCompletionResponse;
+            if (dat.choices) {
+                const message = dat.choices[0].message;
+                if (message.images) {
+                    message.images.forEach((image, index) => {
+                        imageUrl = image.image_url.url; // Get the last url
+                        console.log(`Generated image ${index + 1}: ${imageUrl}`);
+                    });
+                }
+            }
+        }
+        else {
+            alertError(`Submit task failed ${res.status}: ${res.data}`)
+            return false
+        }
+
+        // Get base64 data URL
+        if (imageUrl) {
+            const resultResponse = await globalFetch(imageUrl, {
+                method: 'GET',
+                headers: {
+                    "Authorization": "Bearer " + config.key
+                },
+                rawResponse: true
+            })
+            if (resultResponse.ok) {
+                // mime-type: jpeg (default), png, webp
+                const contentType = resultResponse.headers?.['content-type'] || 'image/jpeg'
+                const mimeType = contentType.split(';')[0] // resolve "image/png; charset=utf-8"
+
+                // binary image file, need to convert to base64
+                const binary = resultResponse.data
+                const res = Buffer.from(binary).toString('base64');
+                const img = `data:${mimeType};base64,${res}`
+
+                // inlay mode
+                if(returnSdData === 'inlay'){
+                    return img
+                }
+                // default mode
+                else {
+                    let charemotions = get(CharEmotion)
+                    charemotions[currentChar.chaId] = [[img, img, Date.now()]]
+                    CharEmotion.set(charemotions)
+                    return returnSdData
+                }
+            }
+            else {
+                alertError(JSON.stringify(resultResponse.data))
+                return false
+            }
+        }
+        else {
+            alertError(`Submited task but return no images  ${res.status}: ${res.data}`)
+            return false
+        }
+    }
     return ''
 }
