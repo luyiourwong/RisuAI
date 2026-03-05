@@ -23,7 +23,8 @@ export enum LLMFlags{
     deepSeekThinkingOutput,
     noCivilIntegrity,
     claudeThinking,
-    claudeAdaptiveThinking
+    claudeAdaptiveThinking,
+    hasDiffusing
 }
 
 export enum LLMProvider{

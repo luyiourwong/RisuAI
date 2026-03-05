@@ -517,8 +517,9 @@ export async function requestOpenAI(arg:RequestDataArgumentExtended):Promise<req
         }
         body.n = db.genTime
     }
-    if(arg.useStreaming){
+    if(arg.useStreaming || arg.useDiffusing){
         body.stream = true
+        if (arg.useDiffusing) body.diffusing = true
         let urlHost = new URL(replacerURL).host
         if(urlHost.includes("localhost") || urlHost.includes("172.0.0.1") || urlHost.includes("0.0.0.0")){
             if(!isTauri){
@@ -1194,18 +1195,28 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                             for(const choice of choices){
                                 const chunk = choice.delta.content ?? choices.text
                                 if(chunk){
-                                    if(arg.multiGen){
-                                        const ind = choice.index.toString()
-                                        if(!readed[ind]){
-                                            readed[ind] = ""
+                                    if(arg.useDiffusing){
+                                        if(arg.multiGen){
+                                            readed[choice.index.toString()] = chunk
                                         }
-                                        readed[ind] += chunk
+                                        else{
+                                            readed["0"] = chunk
+                                        }
                                     }
                                     else{
-                                        if(!readed["0"]){
-                                            readed["0"] = ""
+                                        if(arg.multiGen){
+                                            const ind = choice.index.toString()
+                                            if(!readed[ind]){
+                                                readed[ind] = ""
+                                            }
+                                            readed[ind] += chunk
                                         }
-                                        readed["0"] += chunk
+                                        else{
+                                            if(!readed["0"]){
+                                                readed["0"] = ""
+                                            }
+                                            readed["0"] += chunk
+                                        }
                                     }
                                 }
                                 // Check for tool calls in the delta
@@ -1246,7 +1257,12 @@ function getTranStream(arg:RequestDataArgumentExtended):TransformStream<Uint8Arr
                                     readed["__tool_calls"] = JSON.stringify(toolCallsData)
                                 }
                                 if(choice?.delta?.reasoning_content){
-                                    reasoningContent += choice.delta.reasoning_content
+                                    if(arg.useDiffusing){
+                                        reasoningContent = choice.delta.reasoning_content
+                                    }
+                                    else{
+                                        reasoningContent += choice.delta.reasoning_content
+                                    }
                                 }
                             }
                         } catch (error) {}

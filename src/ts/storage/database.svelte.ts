@@ -804,6 +804,7 @@ export interface Database{
     showMemoryLimit:boolean
     roundIcons:boolean
     useStreaming:boolean
+    useDiffusing:boolean
     supaMemoryKey:string
     hypaMemoryKey:string
     supaModelType:string

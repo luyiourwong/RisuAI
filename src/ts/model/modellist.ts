@@ -512,7 +512,7 @@ export const LLMModels: LLMModel[] = [
         name: "Custom API",
         provider: LLMProvider.AsIs,
         format: LLMFormat.OpenAICompatible,
-        flags: [LLMFlags.hasFullSystemPrompt, LLMFlags.hasStreaming],
+        flags: [LLMFlags.hasFullSystemPrompt, LLMFlags.hasStreaming, LLMFlags.hasDiffusing],
         recommended: true,
         parameters: ['temperature', 'top_p', 'frequency_penalty', 'presence_penalty', 'repetition_penalty', 'min_p', 'top_a', 'top_k', 'thinking_tokens'],
         tokenizer: LLMTokenizer.Unknown

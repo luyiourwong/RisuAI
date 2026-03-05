@@ -271,6 +271,9 @@
                 <Check bind:check={DBState.db.streamGeminiThoughts} name={`Stream Gemini Thoughts`}/>
             {/if}
         {/if}
+        {#if modelInfo.flags.includes(LLMFlags.hasDiffusing) || subModelInfo.flags.includes(LLMFlags.hasDiffusing)}
+            <Check bind:check={DBState.db.useDiffusing} name={`Response ${language.diffusing}`}/>
+        {/if}
 
         {#if DBState.db.aiModel === 'reverse_proxy' || DBState.db.subModel === 'reverse_proxy'}
             <Check bind:check={DBState.db.reverseProxyOobaMode} name={`${language.reverseProxyOobaMode}`}/>

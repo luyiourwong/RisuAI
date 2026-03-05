@@ -36,6 +36,7 @@ interface requestDataArgument{
     PresensePenalty?: number
     frequencyPenalty?: number,
     useStreaming?:boolean
+    useDiffusing?:boolean
     isGroupChat?:boolean
     useEmotion?:boolean
     continue?:boolean
@@ -338,6 +339,7 @@ export async function requestChatDataMain(arg:requestDataArgument, model:ModelMo
     targ.bias = arg.bias
     targ.currentChar = arg.currentChar
     targ.useStreaming = db.useStreaming && arg.useStreaming
+    targ.useDiffusing = db.useDiffusing && arg.useDiffusing
     targ.continue = arg.continue ?? false
     targ.biasString = arg.biasString ?? []
     targ.multiGen = ((db.genTime > 1 && targ.aiModel.startsWith('gpt') && (!arg.continue)) && (!arg.noMultiGen))

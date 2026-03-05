@@ -812,6 +812,7 @@ export const languageEnglish = {
     showFirstMessagePages: "Show First Message Pages",
     roundIcons: "Round Icons",
     streaming: "Streaming",
+    diffusing: "Diffusing",
     chatBot: "Chat Bot",
     otherBots: "Other Bots",
     user: "User",
