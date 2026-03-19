@@ -35,6 +35,11 @@
   let panelMessages = [];
   let isSending = false;
 
+  function previewText(value, length = 220) {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+    return text.length > length ? `${text.slice(0, length)}...` : text;
+  }
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -294,12 +299,13 @@
     if (!model) {
       throw new Error('Missing model plugin argument.');
     }
+    const authorizationValue = apiKey.toLowerCase().startsWith('bearer ') ? apiKey : `Bearer ${apiKey}`;
 
     const response = await Risuai.nativeFetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: authorizationValue,
       },
       body: JSON.stringify({
         model,
@@ -307,17 +313,39 @@
       }),
     });
 
+    const responseText = await response.text().catch(() => '');
+    const contentType = response.headers.get('content-type') || '';
+
     if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(`Request failed: ${response.status} ${errorText}`.trim());
+      throw new Error(
+        `Request failed: ${response.status}. content-type=${contentType || 'unknown'}. body=${previewText(responseText)}`
+      );
     }
 
-    const data = await response.json();
+    if (!contentType.toLowerCase().includes('application/json')) {
+      throw new Error(
+        `Expected JSON but received ${contentType || 'unknown'}. body=${previewText(responseText)}`
+      );
+    }
+
+    let data;
+    try {
+      data = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      throw new Error(`Invalid JSON response. body=${previewText(responseText)}`);
+    }
+
     const content = data?.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || !content.trim()) {
-      throw new Error('Model returned empty content.');
+      throw new Error(`Model returned empty content. body=${previewText(responseText)}`);
     }
     return content.trim();
+  }
+
+  async function clearPanelMessages() {
+    panelMessages = [];
+    await persistState();
+    renderChatMessages();
   }
 
   async function handleSend() {
@@ -497,6 +525,7 @@
           </div>
           <div class="commentbot-actions">
             <button id="commentbot-sync" class="commentbot-button">Sync</button>
+            <button id="commentbot-clear" class="commentbot-button">Clear</button>
             <button id="commentbot-close" class="commentbot-button">Close</button>
           </div>
         </div>
@@ -560,6 +589,9 @@
         await persistState();
         renderChatMessages();
       });
+    });
+    document.getElementById('commentbot-clear')?.addEventListener('click', async () => {
+      await clearPanelMessages();
     });
     document.getElementById('commentbot-close')?.addEventListener('click', async () => {
       await Risuai.hideContainer();
