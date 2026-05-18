@@ -1488,10 +1488,13 @@ export async function exportCharacterCard(char:character, type:'png'|'json'|'cha
                 }
                 delete card.data.extensions.risuai.triggerscript
                 delete card.data.extensions.risuai.customScripts
-                await writer.write("module.risum", await exportModule(md, {
+                // 導出模塊時使用 charx 格式，資產可直接查看
+                await exportModule(md, {
                     alertEnd: false,
-                    saveData: false
-                }))
+                    saveData: false,
+                    type: 'charx',
+                    writer: writer
+                })
                 await writer.write("card.json", Buffer.from(JSON.stringify(card, null, 4)))
             }
             else{

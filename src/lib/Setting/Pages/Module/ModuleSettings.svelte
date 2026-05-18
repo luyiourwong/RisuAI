@@ -77,7 +77,7 @@
                         {#if !rmodule.mcp}
                             <button class="text-textcolor2 hover:text-green-500 mr-2 cursor-pointer" use:tooltip={language.download} onclick={async (e) => {
                                 e.stopPropagation()
-                                exportModule(rmodule)
+                                exportModule(rmodule, {type: 'charx'})
                             }}>
                                 <Share2Icon size={18}/>
                             </button>

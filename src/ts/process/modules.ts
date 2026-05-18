@@ -1,14 +1,16 @@
 import { language } from "src/lang"
 import { alertClear, alertConfirm, alertError, alertModuleSelect, alertNormal, alertStore, alertWait } from "../alert"
 import { getCurrentCharacter, getCurrentChat, getDatabase, setCurrentCharacter, setDatabase, type customscript, type loreBook, type triggerscript } from "../storage/database.svelte"
-import { AppendableBuffer, downloadFile, forageStorage, readImage, saveAsset } from "../globalApi.svelte"
+import { AppendableBuffer, downloadFile, forageStorage, readImage, saveAsset, LocalWriter, VirtualWriter } from "../globalApi.svelte"
 import { selectSingleFile, sleep } from "../util"
 import { v4 } from "uuid"
 import { convertExternalLorebook } from "./lorebook.svelte"
-import { compressImage } from '../media'
+import { compressImage, getImageType } from '../media'
 import { decodeRPack, encodeRPack } from "../rpack/rpack_js"
 import { DBState, HideIconStore, moduleBackgroundEmbedding, ReloadGUIPointer } from "../stores.svelte"
 import {get} from "svelte/store"
+import { CharXWriter } from "./processzip"
+import { PngChunk } from "../pngChunk"
 
 export interface MCPModule{
     url: string
@@ -34,9 +36,19 @@ export interface RisuModule{
 export async function exportModule(module:RisuModule, arg:{
     alertEnd?:boolean
     saveData?:boolean
+    type?:'risum'|'charx'
+    writer?:LocalWriter|VirtualWriter|CharXWriter
 } = {}){
     const alertEnd = arg.alertEnd ?? true
     const saveData = arg.saveData ?? true
+    const type = arg.type ?? 'risum'
+
+    // charx 模式：使用 ZIP 格式，可直接查看媒體檔案
+    if(type === 'charx'){
+        return await exportModuleCharX(module, arg)
+    }
+
+    // risum 模式：原有的二進制格式
     const apb = new AppendableBuffer()
     const writeLength = (len:number) => {
         const lenbuf = Buffer.alloc(4)
@@ -93,6 +105,175 @@ export async function exportModule(module:RisuModule, arg:{
     }
 
     return apb.buffer
+}
+
+/**
+ * 以 charx (ZIP) 格式導出模組，可直接打開查看媒體檔案
+ */
+async function exportModuleCharX(module:RisuModule, arg:{
+    alertEnd?:boolean
+    saveData?:boolean
+    writer?:LocalWriter|VirtualWriter|CharXWriter
+} = {}){
+    const alertEnd = arg.alertEnd ?? true
+    const saveData = arg.saveData ?? true
+
+    // 如果傳入的是 CharXWriter，直接使用；否則創建新的
+    let writer:CharXWriter
+    let needInit = false
+    
+    if(arg.writer instanceof CharXWriter){
+        writer = arg.writer
+    }
+    else{
+        const localWriter = arg.writer ?? (new LocalWriter())
+        if(!arg.writer && saveData){
+            await (localWriter as LocalWriter).init('Module CharX File', ['charx'])
+        }
+        writer = new CharXWriter(localWriter)
+        needInit = true
+        await writer.init()
+    }
+
+    const assets = module.assets ?? []
+    module = safeStructuredClone(module)
+    module.assets ??= []
+    module.assets = module.assets.map((asset) => {
+        return [asset[0], '', asset[2]] as [string,string,string]
+    })
+
+    // 寫入模組 JSON
+    await writer.write("module.json", Buffer.from(JSON.stringify({
+        module: module,
+        type: 'risuModule'
+    }, null, 2), 'utf-8'))
+
+    // 寫入資產
+    const seenPaths = new Set<string>()
+    for(let i=0;i<assets.length;i++){
+        const asset = assets[i]
+        alertStore.set({
+            type: 'progress',
+            msg: `Loading... (Adding Assets)`,
+            submsg: ((i + 1) / assets.length * 100).toFixed(2)
+        })
+
+        let rData = await readImage(asset[1])
+        if(!rData){
+            continue
+        }
+
+        // 解析資產類型和擴展名
+        const assetName = asset[0] || `asset_${i + 1}`
+        const assetExt = asset[2] || 'png'
+        const imageType = getImageType(rData)
+
+        // 確定資產類型目錄
+        let itype = 'other'
+        switch(assetExt.toLowerCase()){
+            case 'png':
+            case 'jpg':
+            case 'jpeg':
+            case 'gif':
+            case 'webp':
+            case 'avif':
+                itype = 'image'
+                break
+            case 'mp3':
+            case 'wav':
+            case 'ogg':
+            case 'flac':
+                itype = 'audio'
+                break
+            case 'mp4':
+            case 'webm':
+            case 'mov':
+            case 'avi':
+            case 'mkv':
+                itype = 'video'
+                break
+            case 'mmd':
+            case 'obj':
+                itype = 'model'
+                break
+            case 'safetensors':
+            case 'cpkt':
+            case 'onnx':
+                itype = 'ai'
+                break
+            case 'otf':
+            case 'ttf':
+            case 'woff':
+            case 'woff2':
+                itype = 'fonts'
+                break
+            case 'js':
+            case 'ts':
+            case 'lua':
+                itype = 'code'
+                break
+        }
+
+        // 生成唯一路徑
+        let name = assetName.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').replace(/[. ]+$/, '')
+        if(name.length > 100){
+            name = name.substring(0, 100)
+        }
+        const ext = assetExt === 'unknown' ? 'png' : assetExt
+        const baseDir = assetExt === 'unknown' ? `assets/image` : `assets/${itype}`
+
+        let uniqueName = name
+        let suffix = 0
+        while(seenPaths.has(`${baseDir}/${uniqueName}.${ext}`)){
+            suffix++
+            uniqueName = `${name}_${suffix}`
+        }
+        const path = `${baseDir}/${uniqueName}.${ext}`
+        seenPaths.add(path)
+
+        // 寫入元數據（PNG 文件）
+        const metaPath = `x_meta/${uniqueName}.json`
+        if(imageType === 'PNG'){
+            const metadatas:Record<string,string> = {}
+            try {
+                const gen = PngChunk.readGenerator(rData)
+                for await (const chunk of gen){
+                    if(!chunk || chunk instanceof AppendableBuffer){
+                        continue
+                    }
+                    metadatas[chunk.key] = chunk.value
+                }
+            } catch (error) {
+                // 忽略 PNG 解析錯誤
+            }
+            if(Object.keys(metadatas).length > 0){
+                await writer.write(metaPath, Buffer.from(JSON.stringify(metadatas, null, 4)), 6)
+            }
+            else{
+                await writer.write(metaPath, Buffer.from(JSON.stringify({
+                    'type': imageType
+                }), 'utf-8'), 6)
+            }
+        }
+        else{
+            await writer.write(metaPath, Buffer.from(JSON.stringify({
+                'type': imageType
+            }), 'utf-8'), 6)
+        }
+
+        // 寫入資產文件
+        await writer.write(path, Buffer.from(await compressImage(rData)))
+    }
+
+    // 只有當我們創建了 writer 時才結束它
+    if(needInit){
+        await writer.end()
+        if(saveData && !arg.writer){
+            alertNormal(language.successExport)
+        }
+    }
+
+    return new Uint8Array(0)
 }
 
 export async function readModule(buf:Buffer):Promise<RisuModule> {
